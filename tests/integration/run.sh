@@ -36,6 +36,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Error messages are wrapped to the terminal width, so match on one line.
+log_has() { tr -s '[:space:]' ' ' <"$1" | grep -qi -- "$2"; }
 step() { printf '\n==> %s\n' "$*"; }
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 
@@ -103,7 +105,7 @@ if "$cli" "${neg[@]}" apply -auto-approve -input=false -no-color \
 echo failing on purpose; exit 7' >"$work/fail.log" 2>&1; then
   fail "apply succeeded although the script exited with 7"
 fi
-grep -q 'status 7' "$work/fail.log" || { cat "$work/fail.log"; fail "exit status 7 not reported"; }
+log_has "$work/fail.log" 'status 7' || { cat "$work/fail.log"; fail "exit status 7 not reported"; }
 left="$(on_target 'ls /tmp/terraform-ssh-executor-* 2>/dev/null | wc -l')" || fail "cannot reach the target"
 [[ "$left" -eq 0 ]] || fail "the script was left on the host after a failure"
 "$cli" "${neg[@]}" destroy -auto-approve -input=false -var 'script_content=x' >/dev/null
@@ -115,7 +117,7 @@ if TF_VAR_ssh_host_key="$(cut -d' ' -f1,2 "$work/other_host.pub")" \
 touch /tmp/should-not-exist' >"$work/hostkey.log" 2>&1; then
   fail "apply succeeded with the wrong host key"
 fi
-grep -qi 'host key\|handshake' "$work/hostkey.log" || { cat "$work/hostkey.log"; fail "host key error not reported"; }
+log_has "$work/hostkey.log" 'host key\|handshake' || { cat "$work/hostkey.log"; fail "host key error not reported"; }
 ran="$(on_target 'ls /tmp/should-not-exist 2>/dev/null | wc -l')" || fail "cannot reach the target"
 [[ "$ran" -eq 0 ]] || fail "the script ran despite the wrong host key"
 
