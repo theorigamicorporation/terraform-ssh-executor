@@ -1,6 +1,6 @@
 # Throwaway SSH server for the integration tests. Not for anything else.
 # scp (openssh-client-default) is needed by the file provisioner.
-FROM docker.io/library/alpine:3.22
+FROM docker.io/library/alpine:3.24
 
 RUN apk add --no-cache bash openssh-client-default openssh-server sudo \
  && adduser -D -s /bin/bash tester \
