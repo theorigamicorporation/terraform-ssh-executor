@@ -1,4 +1,4 @@
-output "example_output" {
-  description = "Example output of the module"
-  value       = module.terraform_module_template
+output "install_runs" {
+  description = "ID of the last agent install per server. It changes whenever the install runs again."
+  value       = { for k, m in module.install_agent : k => m.id }
 }

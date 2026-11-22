@@ -1,35 +1,34 @@
-# Secrets
-.env
-
-# IDE
-.idea
-.vscode
-
-.DS_Store
-
-# Local .terraform directories
-**/.terraform/*
-
-# Terraform lockfile
+# Terraform / OpenTofu working files
+.terraform/
 .terraform.lock.hcl
-
-# .tfstate files
 *.tfstate
 *.tfstate.*
 *.tfplan
-
-# Crash log files
+tfplan
 crash.log
-
-# Exclude all .tfvars files
+crash.*.log
 *.tfvars
-
-# Ignore override files
+!examples/**/*.tfvars.example
 override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
 
-# Ignore CLI configuration files
+# Integration test link, created and removed by tests/integration/run.sh
+/tests/integration/upgrade/module
+
+# Local overrides and secrets
+.env
+*.env
 .terraformrc
 terraform.rc
+.tofurc
+
+# Editors
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Parallel work trees
+/.worktrees/

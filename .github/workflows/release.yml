@@ -1,13 +1,43 @@
-name: Create new release with changelog
+name: Release
+
+# Creates a GitHub release when a v* tag is pushed, with the matching section
+# of CHANGELOG.md as notes. The Terraform Registry and the OpenTofu Registry
+# pick up the tag on their own.
+on:
+  push:
+    tags:
+      - "v*"
 
 permissions:
-  contents: write
-  pull-requests: write
-
-on:
-  pull_request_target:
-    types: [closed]
+  contents: read
 
 jobs:
   release:
-    uses: getindata/github-workflows/.github/workflows/gh-create-release.yml@v1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Extract release notes from CHANGELOG.md
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="${TAG#v}"
+          awk -v v="$version" '
+            $0 ~ "^## " v "( |$)" { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "CHANGELOG.md has no section for $version. Add '## $version - <date>' before tagging." >&2
+            exit 1
+          fi
+          cat notes.md
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TAG" --notes-file notes.md --verify-tag

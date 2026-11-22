@@ -1,0 +1,21 @@
+name: Feature request
+description: An input, output or behaviour you would like to see
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What do you want to do?
+      description: The situation you are in and what the module does not let you do today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: How would you like it to look?
+      description: A sketch of the module block in HCL.
+      render: hcl
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Current workaround

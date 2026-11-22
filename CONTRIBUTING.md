@@ -1,34 +1,65 @@
 # Contributing
 
-When contributing to this repository, please first discuss the change you wish to make via issue,
-email, or any other method with the owners of this repository before making a change.
+Thanks for helping. Bug reports with the module version, the Terraform or
+OpenTofu version, the remote OS and the relevant part of the apply log (with
+addresses and secrets replaced) are the most useful thing you can send.
 
-Please note we have a code of conduct, please follow it in all your interactions with the project.
+## Setup
 
-## Pull Request Process
+1. Install the pinned toolchain: `asdf install` (see `.tool-versions`). If you
+   do not use asdf, install the same versions of Terraform, OpenTofu, tflint,
+   terraform-docs and just some other way.
+2. For the integration tests, install rootless [podman](https://podman.io)
+   and an OpenSSH client (`ssh`, `ssh-keygen`, `ssh-keyscan`).
+3. Run `just` to see the recipes. CI runs the same ones.
 
-1. Update the README.md with details of changes including example hcl blocks and [example files](./examples) if appropriate.
-2. Run pre-commit hooks `pre-commit run -a`.
-3. Once all outstanding comments and checklist items have been addressed, your contribution will be merged! Merged PRs will be included in the next release. The module maintainers take care of updating the CHANGELOG as they merge.
+## Day to day
 
-## Checklists for contributions
+```sh
+just fmt                          # terraform fmt
+just check                        # fmt-check, validate, lint, test, docs-check
+just test-with tofu               # unit tests with one CLI
+just test-integration             # integration tests with both CLIs
+just test-integration-with terraform
+just docs                         # regenerate the README tables
+```
 
-- [ ] Add [semantics prefix](#semantic-pull-requests) to your PR or Commits (at least one of your commit groups)
-- [ ] CI tests are passing
-- [ ] README.md has been updated after any changes to variables and outputs.
-- [ ] Run pre-commit hooks `pre-commit run -a`
+Commit the regenerated README with your change; CI fails when it drifts.
 
-## Semantic Pull Requests
+## Tests
 
-To generate changelog, Pull Requests or Commits must have semantic and must follow conventional specs below:
+- Unit tests (`tests/*.tftest.hcl`) only plan, so they need no SSH server.
+  They pin the trigger keys and values that decide when a script runs again;
+  changing those runs every user's script again on upgrade, so treat a change
+  there as breaking.
+- Integration tests (`tests/integration/`) start two throwaway SSH servers in
+  rootless podman: a target with a `noexec` tmpfs at `/scratch`, and a bastion
+  on the same network. `run.sh` runs `terraform test` / `tofu test` against
+  them, then checks that a failing script fails the apply, that a wrong host
+  key is rejected and that switching from the older copy of the module in
+  `tests/integration/upgrade/legacy-module` plans no changes. It removes the
+  containers, the network and the test image when it exits, also on failure.
+  Set `KEEP_IMAGE=1` to keep the image between runs.
+- New inputs need a unit test, and an integration test if they change what
+  happens on the host.
 
-- `feat:` for new features
-- `fix:` for bug fixes
-- `improvement:` for enhancements
-- `docs:` for documentation and examples
-- `refactor:` for code refactoring
-- `test:` for tests
-- `ci:` for CI purpose
-- `chore:` for chores stuff
+## Pull requests
 
-The `chore` prefix skipped during changelog generation. It can be used for `chore: update changelog` commit message by example.
+- Keep changes focused and describe what you tested.
+- Fill in the pull request template.
+- Examples and tests must use documentation addresses (192.0.2.0/24,
+  198.51.100.0/24, 203.0.113.0/24, RFC 1918 ranges) and never real keys or
+  hosts.
+- Add a line to `CHANGELOG.md` under "Unreleased".
+
+## Releases
+
+Maintainers move the "Unreleased" section of `CHANGELOG.md` under a version
+heading, merge, and push a `v<version>` tag. The release workflow creates the
+GitHub release with that section as notes, and the registries pick up the tag.
+
+## Design notes
+
+`openspec/specs/` holds the current requirements, and the archived OpenSpec
+changes in `openspec/changes/archive/` explain past decisions, such as why the
+module keeps `null_resource`. Start larger changes with an OpenSpec change.

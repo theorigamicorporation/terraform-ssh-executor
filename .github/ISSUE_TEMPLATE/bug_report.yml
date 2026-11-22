@@ -1,0 +1,47 @@
+name: Bug report
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you expected and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Module configuration
+      description: A minimal module block that shows the problem. Replace real addresses, keys and passwords.
+      render: hcl
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Plan or apply output
+      description: Include the error. `TF_LOG=DEBUG` output around the SSH connection helps (check it for secrets first).
+      render: shell
+  - type: input
+    id: module
+    attributes:
+      label: Module version
+      placeholder: "1.1.0"
+    validations:
+      required: true
+  - type: input
+    id: cli
+    attributes:
+      label: Terraform or OpenTofu version
+      placeholder: "terraform 1.17.2 / tofu 1.13.9"
+    validations:
+      required: true
+  - type: input
+    id: remote
+    attributes:
+      label: Remote host OS and SSH server
+      description: "`cat /etc/os-release` and `ssh -V` on the host."
+      placeholder: "Debian 13, OpenSSH 10.0"
+    validations:
+      required: true

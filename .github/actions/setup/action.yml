@@ -1,0 +1,78 @@
+name: Set up toolchain
+description: >
+  Installs just, and terraform, tofu, tflint and terraform-docs at the versions
+  pinned in .tool-versions, so CI and local runs use the same tools. A tool can
+  be skipped or overridden per job.
+inputs:
+  terraform:
+    description: Terraform version, "pinned" for .tool-versions, or "" to skip
+    default: ""
+  tofu:
+    description: OpenTofu version, "pinned" for .tool-versions, or "" to skip
+    default: ""
+  tflint:
+    description: Install tflint ("true"/"false")
+    default: "false"
+  terraform-docs:
+    description: Install terraform-docs ("true"/"false")
+    default: "false"
+outputs:
+  terraform:
+    description: Installed Terraform version
+    value: ${{ steps.versions.outputs.terraform }}
+  tofu:
+    description: Installed OpenTofu version
+    value: ${{ steps.versions.outputs.tofu }}
+runs:
+  using: composite
+  steps:
+    - name: Read .tool-versions
+      id: versions
+      shell: bash
+      env:
+        IN_TERRAFORM: ${{ inputs.terraform }}
+        IN_TOFU: ${{ inputs.tofu }}
+      run: |
+        pinned() { awk -v t="$1" '$1 == t { print $2 }' .tool-versions; }
+        tf="$IN_TERRAFORM"; [ "$tf" = pinned ] && tf="$(pinned terraform)"
+        tofu="$IN_TOFU"; [ "$tofu" = pinned ] && tofu="$(pinned opentofu)"
+        {
+          echo "just=$(pinned just)"
+          echo "tflint=v$(pinned tflint)"
+          echo "terraform-docs=$(pinned terraform-docs)"
+          echo "terraform=$tf"
+          echo "tofu=$tofu"
+        } >> "$GITHUB_OUTPUT"
+    - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+      with:
+        just-version: ${{ steps.versions.outputs.just }}
+    - if: steps.versions.outputs.terraform != ''
+      uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+      with:
+        terraform_version: ${{ steps.versions.outputs.terraform }}
+        terraform_wrapper: false
+    - if: steps.versions.outputs.tofu != ''
+      uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+      with:
+        tofu_version: ${{ steps.versions.outputs.tofu }}
+        tofu_wrapper: false
+    - if: inputs.tflint == 'true'
+      uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
+      with:
+        tflint_version: ${{ steps.versions.outputs.tflint }}
+    - if: inputs.terraform-docs == 'true'
+      name: Install terraform-docs
+      shell: bash
+      env:
+        VERSION: ${{ steps.versions.outputs.terraform-docs }}
+      run: |
+        dir="$(mktemp -d)"
+        base="https://github.com/terraform-docs/terraform-docs/releases/download/v${VERSION}"
+        tarball="terraform-docs-v${VERSION}-linux-amd64.tar.gz"
+        curl -fsSL -o "$dir/$tarball" "$base/$tarball"
+        curl -fsSL -o "$dir/sums" "$base/terraform-docs-v${VERSION}.sha256sum"
+        (cd "$dir" && grep " $tarball\$" sums | sha256sum -c -)
+        tar -xzf "$dir/$tarball" -C "$dir" terraform-docs
+        install -m 0755 "$dir/terraform-docs" /usr/local/bin/terraform-docs 2>/dev/null ||
+          sudo install -m 0755 "$dir/terraform-docs" /usr/local/bin/terraform-docs
+        terraform-docs --version

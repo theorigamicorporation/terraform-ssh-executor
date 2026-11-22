@@ -1,0 +1,20 @@
+# Throwaway SSH server for the integration tests. Not for anything else.
+# scp (openssh-client-default) is needed by the file provisioner.
+FROM docker.io/library/alpine:3.22
+
+RUN apk add --no-cache bash openssh-client-default openssh-server sudo \
+ && adduser -D -s /bin/bash tester \
+ && sed -i 's/^tester:!/tester:*/' /etc/shadow \
+ && echo 'tester ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/tester \
+ && chmod 0440 /etc/sudoers.d/tester \
+ && printf '%s\n' \
+      'PasswordAuthentication no' \
+      'KbdInteractiveAuthentication no' \
+      'PermitRootLogin no' \
+      'AllowTcpForwarding yes' \
+      'HostKey /etc/ssh/ssh_host_ed25519_key' \
+      > /etc/ssh/sshd_config.d/test.conf
+
+COPY entrypoint.sh /entrypoint.sh
+EXPOSE 22
+ENTRYPOINT ["/entrypoint.sh"]
