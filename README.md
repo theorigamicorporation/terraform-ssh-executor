@@ -280,8 +280,9 @@ sequenceDiagram
     TF->>H: check ssh_host_key, log in
     TF->>H: scp script to remote_directory
     TF->>H: chmod 0700, [sudo -n] [interpreter] script args
-    H-->>TF: output and exit code
-    TF->>H: rm script
+    H-->>TF: script output
+    H->>H: rm script
+    H-->>TF: exit code of the script
     Note over TF,H: non-zero exit fails the apply, the next apply runs it again
 ```
 
