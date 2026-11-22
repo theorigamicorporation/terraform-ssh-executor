@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# While the repository is private, jobs run on the organisation's self-hosted
+# runners; once public they use GitHub-hosted runners. Self-hosted runners are
+# never used for a public repository.
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Format, lint and docs
+    runs-on: ${{ github.event.repository.private && 'o4-k8s-runner-set-o4' || 'ubuntu-latest' }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          terraform: pinned
+          tflint: "true"
+          terraform-docs: "true"
+      - run: just fmt-check
+      - run: just lint
+        env:
+          # tflint --init downloads the ruleset from GitHub.
+          GITHUB_TOKEN: ${{ github.token }}
+      - run: just docs-check
+
+  unit:
+    name: "Unit: ${{ matrix.cli }} ${{ matrix.version }}"
+    runs-on: ${{ github.event.repository.private && 'o4-k8s-runner-set-o4' || 'ubuntu-latest' }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # "pinned" is the version in .tool-versions; the others are the oldest
+        # supported release and one in between.
+        include:
+          - { cli: terraform, version: pinned }
+          - { cli: terraform, version: "1.13.5" }
+          - { cli: terraform, version: "1.6.6" }
+          - { cli: tofu, version: pinned }
+          - { cli: tofu, version: "1.11.14" }
+          - { cli: tofu, version: "1.6.3" }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          terraform: ${{ matrix.cli == 'terraform' && matrix.version || '' }}
+          tofu: ${{ matrix.cli == 'tofu' && matrix.version || '' }}
+      - run: just validate-with ${{ matrix.cli }}
+      - run: just test-with ${{ matrix.cli }}
+
+  integration:
+    name: "Integration: ${{ matrix.cli }} ${{ matrix.version }}"
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { cli: terraform, version: pinned }
+          - { cli: terraform, version: "1.6.6" }
+          - { cli: tofu, version: pinned }
+          - { cli: tofu, version: "1.6.3" }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          terraform: ${{ matrix.cli == 'terraform' && matrix.version || '' }}
+          tofu: ${{ matrix.cli == 'tofu' && matrix.version || '' }}
+      - run: podman version
+      - run: just test-integration-with ${{ matrix.cli }}

@@ -1,55 +1,33 @@
-formatter: "md tbl" # this is required
+# `just docs` writes the inputs and outputs tables into README.md between the
+# BEGIN_TF_DOCS and END_TF_DOCS markers. CI fails when they are out of date.
+formatter: markdown table
 
-version: ">= 0.14"
+version: ">= 0.24.0, < 1.0.0"
 
 sections:
-  hide: []
-  show: [all]
-
-content: |-
-  {{ .Header }}
-
-  {{ .Footer }}
-
-  {{ .Inputs }}
-
-  {{ .Modules }}
-
-  {{ .Outputs }}
-
-  {{ .Providers }}
-
-  {{ .Requirements }}
-
-  {{ .Resources }}
+  show:
+    - requirements
+    - providers
+    - resources
+    - inputs
+    - outputs
 
 output:
-  file: "README.md"
+  file: README.md
   mode: inject
-  template: |-
-    <!-- BEGIN_TF_DOCS -->
-    {{ .Content }}
-    <!-- END_TF_DOCS -->
-
-output-values:
-  enabled: false
-  from: ""
 
 sort:
   enabled: true
-  by: name
+  by: required
 
 settings:
   anchor: true
-  color: true
   default: true
-  description: false
   escape: true
-  hide-empty: false
+  hide-empty: true
   html: true
-  indent: 2
+  indent: 3
   lockfile: false
-  read-comments: true
   required: true
   sensitive: true
   type: true

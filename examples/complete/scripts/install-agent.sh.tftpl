@@ -1,0 +1,9 @@
+#!/bin/sh
+# Rendered by templatefile() in main.tf.
+set -eu
+echo "Installing agent ${agent_version} for ${environment}"
+mkdir -p /etc/agent
+cat > /etc/agent/config <<CONFIG
+environment = ${environment}
+server      = ${server}
+CONFIG

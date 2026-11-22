@@ -1,8 +1,9 @@
-module "terraform_module_template" {
-  source = "../../"
+module "setup" {
+  source = "../.."
 
-  example_var = "This is a example value."
-  sub_resource = {
-    example_var = "This is a example value of sub resource."
-  }
+  script_location = "${path.module}/scripts/setup.sh"
+  ssh_host        = var.host
+  ssh_user        = "root"
+  ssh_private_key = file(var.private_key_path)
+  ssh_host_key    = var.host_key
 }

@@ -1,0 +1,18 @@
+schema: spec-driven
+
+context: |
+  Terraform/OpenTofu module that uploads a script to a host over SSH and runs
+  it, using a null_resource with file and remote-exec provisioners. Published
+  on the Terraform Registry as theorigamicorporation/executor/ssh. The same
+  module serves Terraform and OpenTofu.
+  Unit tests are plan-only terraform/tofu tests; integration tests run against
+  throwaway SSH servers in rootless podman. Developer entry point is the
+  justfile. Containers use rootless podman, never docker.
+  Fixtures and examples only use RFC 5737 / RFC 1918 example addresses.
+
+rules:
+  proposal:
+    - Say why the change is needed before what it changes
+    - Say whether the trigger keys or values change, because that re-runs scripts on upgrade
+  tasks:
+    - Keep tasks small enough to verify with a unit or integration test

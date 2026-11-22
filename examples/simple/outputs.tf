@@ -1,4 +1,4 @@
-output "example_output" {
-  description = "Example output of the module"
-  value       = module.terraform_module_template
+output "script_hash" {
+  description = "MD5 of the script that ran."
+  value       = module.setup.script_hash
 }
