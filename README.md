@@ -1,6 +1,12 @@
 <div align="center">
 
-<img src="assets/logo.svg" alt="" width="112" height="112">
+<a href="https://theorigamicorporation.com">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/toc-lockup-on-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/toc-lockup-on-light.svg">
+    <img src="assets/toc-lockup-on-light.svg" alt="The Origami Corporation" width="320">
+  </picture>
+</a>
 
 # SSH executor module for Terraform and OpenTofu
 
@@ -35,6 +41,7 @@
 ## Contents
 
 - [Features](#features)
+- [Why not a plain provisioner?](#why-not-a-plain-provisioner)
 - [Install](#install)
 - [Quick start](#quick-start)
 - [When the script runs](#when-the-script-runs)
@@ -69,6 +76,21 @@
   again.
 - **One module for Terraform and OpenTofu**, tested in CI against real SSH
   servers with several versions of each.
+
+## Why not a plain provisioner?
+
+A `null_resource` with a `file` and a `remote-exec` provisioner is a few
+lines, and that is how this module started. These are the parts that are easy
+to get wrong by hand, and what the module does about them:
+
+| By hand | This module |
+|---|---|
+| `remote-exec` runs inline commands without `set -e`, so `chmod`, run, `rm` reports the exit code of `rm` and a failed script passes | one command line that exits with the script's code and removes the file either way |
+| every script goes to `/tmp/<name>`, so two resources with the same script name on one host overwrite each other | a per-run file name under `remote_directory` |
+| `/tmp` mounted `noexec` breaks `chmod +x && ./script` | `interpreter = "bash"` |
+| the host key is not checked unless you remember `host_key` | `ssh_host_key` and `bastion_host_key` inputs, documented and tested |
+| triggers are ad hoc, so a refactor re-runs every script | a fixed, tested trigger set and a table of what re-runs the script |
+| no tests | unit tests and integration tests against real SSH servers on Terraform and OpenTofu |
 
 ## Install
 
@@ -245,6 +267,23 @@ resource ID, to `recreate_hook` if a new server should get the script.
 Destroying the module does nothing on the server; it only forgets the run.
 
 ## How a run works
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant TF as Terraform / OpenTofu
+    participant B as Bastion (optional)
+    participant H as Host
+    TF->>TF: wait_seconds (optional)
+    TF->>B: SSH, check bastion_host_key
+    B->>H: forward to ssh_host:ssh_port
+    TF->>H: check ssh_host_key, log in
+    TF->>H: scp script to remote_directory
+    TF->>H: chmod 0700, [sudo -n] [interpreter] script args
+    H-->>TF: output and exit code
+    TF->>H: rm script
+    Note over TF,H: non-zero exit fails the apply, the next apply runs it again
+```
 
 1. Optionally sleeps `wait_seconds` on the machine running Terraform.
 2. Connects over SSH, through the bastion if one is set, and checks the host
@@ -452,3 +491,8 @@ described in [SECURITY.md](SECURITY.md). This project follows the
 ## License
 
 [Apache License 2.0](LICENSE).
+
+<div align="center">
+<br>
+<a href="https://theorigamicorporation.com">The Origami Corporation</a>. Helping you build the future.
+</div>
