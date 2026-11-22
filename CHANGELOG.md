@@ -6,6 +6,8 @@ All notable changes are listed here. The format follows
 
 ## Unreleased
 
+## 1.1.0 - 2026-11-22
+
 ### Added
 
 - `script_content` and `script_name` to run a script given as text, for
@@ -28,7 +30,7 @@ All notable changes are listed here. The format follows
 - CI on Terraform 1.6, 1.13 and 1.17 and OpenTofu 1.6, 1.11 and 1.13, plus
   tflint, a README drift check, CodeQL and OpenSSF Scorecard.
 - `justfile`, `.tool-versions`, issue and pull request templates, a security
-  policy and OpenSpec specs.
+  policy, OpenSpec specs and the TOC brand lockup in the README.
 
 ### Changed
 
