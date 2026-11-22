@@ -10,30 +10,19 @@
 
 # SSH executor module for Terraform and OpenTofu
 
-**Upload a script to a server over SSH, run it, and run it again only when the script or its inputs change.**
+Upload a script to a server over SSH, run it, and run it again only when the script or its inputs change.
 
 <p>
 <a href="https://github.com/theorigamicorporation/terraform-ssh-executor/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/theorigamicorporation/terraform-ssh-executor/ci.yml?style=flat-square&branch=master&label=CI"></a>
-<a href="https://github.com/theorigamicorporation/terraform-ssh-executor/actions/workflows/release.yml"><img alt="Release workflow" src="https://img.shields.io/github/actions/workflow/status/theorigamicorporation/terraform-ssh-executor/release.yml?style=flat-square&label=release"></a>
 <a href="https://github.com/theorigamicorporation/terraform-ssh-executor/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://img.shields.io/github/actions/workflow/status/theorigamicorporation/terraform-ssh-executor/codeql.yml?style=flat-square&branch=master&label=CodeQL"></a>
 <a href="https://scorecard.dev/viewer/?uri=github.com/theorigamicorporation/terraform-ssh-executor"><img alt="OpenSSF Scorecard" src="https://img.shields.io/ossf-scorecard/github.com/theorigamicorporation/terraform-ssh-executor?style=flat-square&label=OpenSSF%20Scorecard"></a>
 <a href=".tflint.hcl"><img alt="tflint" src="https://img.shields.io/badge/linted%20with-tflint-5C4EE5?style=flat-square"></a>
 </p>
 <p>
 <a href="https://github.com/theorigamicorporation/terraform-ssh-executor/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/theorigamicorporation/terraform-ssh-executor?style=flat-square&sort=semver"></a>
-<a href="https://github.com/theorigamicorporation/terraform-ssh-executor/releases/latest"><img alt="Release date" src="https://img.shields.io/github/release-date/theorigamicorporation/terraform-ssh-executor?style=flat-square"></a>
-</p>
-<p>
 <a href="https://registry.terraform.io/modules/theorigamicorporation/executor/ssh/latest"><img alt="Terraform Registry" src="https://img.shields.io/badge/Terraform-Registry-7B42BC?style=flat-square&logo=terraform&logoColor=white"></a>
 <a href="https://search.opentofu.org/module/theorigamicorporation/executor/ssh/latest"><img alt="OpenTofu Registry" src="https://img.shields.io/badge/OpenTofu-Registry-FFDA18?style=flat-square&logo=opentofu&logoColor=black"></a>
-</p>
-<p>
 <a href="LICENSE"><img alt="License Apache-2.0" src="https://img.shields.io/github/license/theorigamicorporation/terraform-ssh-executor?style=flat-square"></a>
-<a href=".github/workflows/ci.yml"><img alt="Terraform >= 1.6" src="https://img.shields.io/badge/Terraform-%3E%3D%201.6-7B42BC?style=flat-square"></a>
-<a href=".github/workflows/ci.yml"><img alt="OpenTofu >= 1.6" src="https://img.shields.io/badge/OpenTofu-%3E%3D%201.6-FFDA18?style=flat-square"></a>
-<a href="https://github.com/theorigamicorporation/terraform-ssh-executor/commits/master"><img alt="Last commit" src="https://img.shields.io/github/last-commit/theorigamicorporation/terraform-ssh-executor?style=flat-square"></a>
-<a href="https://github.com/theorigamicorporation/terraform-ssh-executor/issues"><img alt="Open issues" src="https://img.shields.io/github/issues/theorigamicorporation/terraform-ssh-executor?style=flat-square"></a>
-<a href="CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square"></a>
 </p>
 
 </div>
@@ -53,28 +42,26 @@
 - [Limitations](#limitations)
 - [FAQ](#faq)
 - [Development](#development)
+- [Support](#support)
 - [Contributing and security](#contributing-and-security)
 
 ## Features
 
-- **Runs once, then only on change.** The script runs on create and again
-  when its contents, arguments, connection port or a hook value change.
-  Nothing happens on a plain re-apply.
-- **A script file or a rendered template.** Point `script_location` at a file,
-  or pass `script_content`, for example the output of `templatefile()`.
-- **Failures fail the apply.** The exit code of the script is what Terraform
-  sees, and the uploaded file is removed whether the script succeeds or not.
-- **Host key checking.** Pin the host key of the server and of the bastion, or
-  the CA key that signs them.
-- **Bastions, sudo and `noexec` mounts.** Connect through a jump host, run the
-  script with `sudo -n`, and run it through an interpreter where `/tmp` is
-  mounted `noexec`.
-- **Secrets stay out of the state.** Private keys and passwords are only used
-  for the connection and are never written to the state.
-- **Drop-in for the older copies.** With default settings the triggers are the
-  same as in 1.0.0, so switching to this version does not run anyone's script
-  again.
-- **One module for Terraform and OpenTofu**, tested in CI against real SSH
+- The script runs on create and again when its contents, arguments, port or a
+  hook value change. A plain re-apply does nothing.
+- Point `script_location` at a file, or pass `script_content`, for example the
+  output of `templatefile()`.
+- The exit code of the script is what Terraform sees, and the uploaded file is
+  removed whether the script succeeds or not.
+- Pin the host key of the server and of the bastion, or the CA key that signs
+  them.
+- Connect through a jump host, run the script with `sudo -n`, and run it
+  through an interpreter where `/tmp` is mounted `noexec`.
+- Private keys and passwords are only used for the connection and never reach
+  the state.
+- With default settings the triggers match 1.0.0, so switching from an older
+  copy of the module does not run anyone's script again.
+- One module serves Terraform and OpenTofu, and CI tests it against real SSH
   servers with several versions of each.
 
 ## Why not a plain provisioner?
@@ -385,8 +372,8 @@ Copies of this module that were kept in other repositories (often as
 `modules/ssh-executor-bash`) use the same resource and the same triggers. To
 switch, change `source` to the registry address and keep the module block's
 name. With default settings `terraform plan` shows no changes and no script
-runs again; CI checks this against such a copy. A copy whose scripts ignored
-failures will now fail the apply when a script exits non-zero.
+runs again; CI checks this against such a copy. Some copies reported success
+when a script failed; with this module such a script now fails the apply.
 
 ## Compatibility
 
@@ -480,6 +467,13 @@ just clean             # remove working files and leftover test containers
 
 The integration tests start two throwaway SSH servers (a target and a bastion)
 with podman and remove them afterwards; see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Support
+
+Report bugs and ask for features in the
+[issue tracker](https://github.com/theorigamicorporation/terraform-ssh-executor/issues),
+with the module version, the Terraform or OpenTofu version and the remote OS.
+For anything else, write to office@theorigamicorporation.com.
 
 ## Contributing and security
 
